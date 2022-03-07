@@ -4,51 +4,77 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.18/vue.min.js"></script>
-    <script src="http://localhost:3101/websocket/socket.io.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+    <link href="https://unpkg.com/vue-simple-notify/dist/vue-simple-notify.min.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-simple-notify/dist/vue-simple-notify.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <title>Document</title>
   </head>
   <body>
-    <div id="app_model">
-        <h1>{{ title }}</h1>
-        <form>
-            <input v-model="text" type="text"/>
-            <button type="submit" @click.prevent="sendMessage()" >Send</button>
-        </form>
-        <p>
-            <ul>
-                <li v-for ="msg of messages" >{{ msg }}</li>
-            </ul>
-        </p>
-    </div>
+    <main id="app_model">
+        <section class="alets">
+            <alerts-component :items="alerts"></alerts-component>
+
+        </section>
+        <section class="chat" >
+
+        
+            <h1>{{ title }}</h1>
+            <form>
+                <input v-model="text" type="text"/>
+                <button type="submit" @click.prevent="sendChatMessage()" >Send</button>
+            </form>
+            <p>
+                <ul>
+                    <li v-for ="msg of messages" >
+                        <strong>{{msg.sender}}:</strong> {{msg.message}}
+                    </li>
+                </ul>
+            </p>
+        </section>
+    </main>
     
         <script>
+            Vue.component('alerts-component',VueSimpleNotify.VueSimpleNotify)
            var app = new Vue({
                 el: "#app_model",
                 data:{
+                    username:'',
                     title:'WebSocket Testing',
                     text:'',
-                    messages: ['some Message','another message'],
-                    socket:null
+                    messages: [],
+                    socket:{chat:null,alerts:null},
+                    alerts:[]
                 },
                 methods:{
-                    sendMessage(){
-                        console.log(`send: ${this.text}`);
-                        this.socket.emit('msgToServer', this.text);
+                    sendChatMessage(){
+                        this.socket.chat.emit('chatToServer',{sender : this.username,message:this.text});
                         this.text = '';
                     },
-                    receiveMessage(msg){
+                    receiveChatMessage(msg){
                         console.log(`recv: ${msg}`);
                         this.messages.push(msg);
 
                     },
+                    receiveAlertsMessage(msg){
+                        this.alerts.push(msg);
+                    }
                 },
                 created(){
-                    this.socket = io('http://localhost:3101',{path:`/websocket`}),
-                    console.log(this.socket);
-                    this.socket.on('msgToClient',(msg)=>{
-                        this.receiveMessage(msg);
+                    this.username = prompt('enter your username')
+                    this.socket.chat = io('http://localhost:3000/chat'),
+                    this.socket.chat.on('chatToClient',(msg)=>{
+                        this.receiveChatMessage(msg);
                     });
+                    this.socket.alerts= io('http://localhost:3000/alert');
+                    console.log('aleeerts');
+                    this.socket.alerts.on('alertToClient', (msg) => {
+                        console.log('aleeerts1');
+                        this.receiveAlertsMessage(msg);
+                    });
+                    console.log(this.socket.alerts);
                 }
                 
                 });
