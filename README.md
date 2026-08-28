@@ -83,6 +83,13 @@ Server listens on **http://localhost:3101** (WebSocket path: `/websocket`).
 
 **[task-managment-front-end](https://github.com/IbrahimQumseya/task-managment-front-end)** — React task management UI (Redux Toolkit, Material UI, auth). Separate REST-based app from the same learning period; not wired to this WebSocket server.
 
+## Screenshots / Demo
+
+| Screen | Preview |
+| --- | --- |
+| Static WebSocket demo | ![WebSocket demo](docs/screenshots/demo-page.png) |
+| Two-tab broadcast | ![Broadcast demo](docs/screenshots/broadcast.png) |
+
 ## License
 
-UNLICENSED — portfolio / learning project.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

@@ -2,56 +2,516 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Board — Live Broadcast Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.18/vue.min.js"></script>
     <script src="http://localhost:3101/websocket/socket.io.js"></script>
-    <title>Document</title>
+    <style>
+      :root {
+        --bg: #0b1120;
+        --surface: #111827;
+        --surface-raised: #1a2234;
+        --border: rgba(148, 163, 184, 0.14);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.12);
+        --success: #34d399;
+        --success-soft: rgba(52, 211, 153, 0.14);
+        --warning: #fbbf24;
+        --shadow: 0 24px 60px rgba(2, 6, 23, 0.45);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(52, 211, 153, 0.12), transparent 24%),
+          var(--bg);
+      }
+
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 40px 24px 56px;
+      }
+
+      .hero {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: #7dd3fc;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 14px 0 10px;
+        font-size: clamp(2rem, 4vw, 2.75rem);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+      }
+
+      .subtitle {
+        margin: 0;
+        max-width: 620px;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      .status-card {
+        min-width: 220px;
+        padding: 18px 20px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: rgba(17, 24, 39, 0.82);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .status-label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--warning);
+        box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.12);
+      }
+
+      .status-dot.connected {
+        background: var(--success);
+        box-shadow: 0 0 0 6px var(--success-soft);
+      }
+
+      .status-text {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .status-meta {
+        margin-top: 8px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 20px;
+      }
+
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: rgba(17, 24, 39, 0.88);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(26, 34, 52, 0.72);
+      }
+
+      .panel-title {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .panel-caption {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .hint {
+        margin: 0 0 20px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        background: linear-gradient(90deg, rgba(56, 189, 248, 0.08), rgba(52, 211, 153, 0.06));
+        color: #cbd5e1;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .composer {
+        padding: 22px;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .composer-row {
+        display: flex;
+        gap: 12px;
+      }
+
+      input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input[type="text"]:focus {
+        border-color: rgba(56, 189, 248, 0.55);
+        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+      }
+
+      button {
+        border: 0;
+        border-radius: 14px;
+        padding: 0 20px;
+        background: linear-gradient(135deg, #38bdf8, #22d3ee);
+        color: #082f49;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .feed {
+        min-height: 420px;
+        max-height: 520px;
+        overflow: auto;
+        padding: 18px 22px 22px;
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 320px;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .empty-icon {
+        width: 54px;
+        height: 54px;
+        margin-bottom: 14px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-soft);
+        color: #7dd3fc;
+        font-size: 1.4rem;
+      }
+
+      .message-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .message {
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: var(--surface-raised);
+      }
+
+      .message.local {
+        border-color: rgba(56, 189, 248, 0.28);
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.08), rgba(17, 24, 39, 0.2));
+      }
+
+      .message.remote {
+        border-color: rgba(52, 211, 153, 0.24);
+        background: linear-gradient(180deg, rgba(52, 211, 153, 0.08), rgba(17, 24, 39, 0.2));
+      }
+
+      .message-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .badge.local {
+        background: rgba(56, 189, 248, 0.14);
+        color: #7dd3fc;
+      }
+
+      .badge.remote {
+        background: rgba(52, 211, 153, 0.14);
+        color: #6ee7b7;
+      }
+
+      .timestamp {
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+      }
+
+      .message-body {
+        margin: 0;
+        font-size: 0.98rem;
+        line-height: 1.55;
+      }
+
+      .event-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .event-pill {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.7);
+        color: #cbd5e1;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+
+      @media (max-width: 900px) {
+        .hero,
+        .grid {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
+
+        .status-card {
+          min-width: 0;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="app_model">
-        <h1>{{ title }}</h1>
-        <form>
-            <input v-model="text" type="text"/>
-            <button type="submit" @click.prevent="sendMessage()" >Send</button>
-        </form>
-        <p>
-            <ul>
-                <li v-for ="msg of messages" >{{ msg }}</li>
-            </ul>
-        </p>
-    </div>
-    
-        <script>
-           var app = new Vue({
-                el: "#app_model",
-                data:{
-                    title:'WebSocket Testing',
-                    text:'',
-                    messages: ['some Message','another message'],
-                    socket:null
-                },
-                methods:{
-                    sendMessage(){
-                        console.log(`send: ${this.text}`);
-                        this.socket.emit('msgToServer', this.text);
-                        this.text = '';
-                    },
-                    receiveMessage(msg){
-                        console.log(`recv: ${msg}`);
-                        this.messages.push(msg);
+    <div id="app_model" class="page">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">NestJS · Socket.io · Broadcast</span>
+          <h1>Live Task Board Demo</h1>
+          <p class="subtitle">
+            Send a message from one browser tab and watch it appear instantly in every connected client.
+            Built to demonstrate real-time collaboration patterns for dashboards and task updates.
+          </p>
+        </div>
 
-                    },
-                },
-                created(){
-                    this.socket = io('http://localhost:3101',{path:`/websocket`}),
-                    console.log(this.socket);
-                    this.socket.on('msgToClient',(msg)=>{
-                        this.receiveMessage(msg);
-                    });
-                }
-                
-                });
-        </script>
+        <aside class="status-card">
+          <div class="status-label">Connection</div>
+          <div class="status-row">
+            <span class="status-dot" :class="{ connected: connected }"></span>
+            <span class="status-text">{{ connected ? 'Connected' : 'Connecting…' }}</span>
+          </div>
+          <div class="status-meta">ws://localhost:3101/websocket</div>
+        </aside>
+      </section>
+
+      <p class="hint">
+        Open this page in a second tab, send an update like
+        <strong>“Sprint standup moved to 10:30”</strong>, and confirm the broadcast lands in both windows.
+      </p>
+
+      <div class="grid">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Compose update</div>
+              <div class="panel-caption">Emits <code>msgToServer</code> to the gateway</div>
+            </div>
+          </div>
+
+          <form class="composer" @submit.prevent="sendMessage">
+            <label class="field-label" for="message-input">Task board message</label>
+            <div class="composer-row">
+              <input
+                id="message-input"
+                v-model="text"
+                type="text"
+                placeholder="e.g. Design review moved to Friday"
+                :disabled="!connected"
+              />
+              <button type="submit" :disabled="!connected || !text.trim()">Broadcast</button>
+            </div>
+
+            <div class="event-pills">
+              <span class="event-pill">msgToServer → gateway</span>
+              <span class="event-pill">msgToClient ← all tabs</span>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Live feed</div>
+              <div class="panel-caption">{{ messages.length }} message<span v-if="messages.length !== 1">s</span> received</div>
+            </div>
+          </div>
+
+          <div class="feed">
+            <div v-if="!messages.length" class="empty-state">
+              <div class="empty-icon">◎</div>
+              <strong>No broadcasts yet</strong>
+              <p>Send the first update to populate the live feed.</p>
+            </div>
+
+            <ul v-else class="message-list">
+              <li
+                v-for="message in messages"
+                class="message"
+                :class="message.origin"
+              >
+                <div class="message-meta">
+                  <span class="badge" :class="message.origin">
+                    {{ message.origin === 'local' ? 'This tab' : 'Broadcast' }}
+                  </span>
+                  <span class="timestamp">{{ message.time }}</span>
+                </div>
+                <p class="message-body">{{ message.text }}</p>
+              </li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      var app = new Vue({
+        el: '#app_model',
+        data: {
+          text: '',
+          messages: [],
+          socket: null,
+          connected: false,
+        },
+        methods: {
+          formatTime: function () {
+            return new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            });
+          },
+          addMessage: function (text, origin) {
+            this.messages.unshift({
+              text: text,
+              origin: origin,
+              time: this.formatTime(),
+            });
+          },
+          sendMessage: function () {
+            var value = this.text.trim();
+            if (!value || !this.socket) {
+              return;
+            }
+
+            this.socket.emit('msgToServer', value);
+            this.addMessage(value, 'local');
+            this.text = '';
+          },
+          receiveMessage: function (msg) {
+            this.addMessage(msg, 'remote');
+          },
+        },
+        created: function () {
+          var self = this;
+          this.socket = io('http://localhost:3101', { path: '/websocket' });
+
+          this.socket.on('connect', function () {
+            self.connected = true;
+          });
+
+          this.socket.on('disconnect', function () {
+            self.connected = false;
+          });
+
+          this.socket.on('msgToClient', function (msg) {
+            self.receiveMessage(msg);
+          });
+        },
+      });
+    </script>
   </body>
 </html>
