@@ -1,73 +1,88 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+# Task Management — WebSocket Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS WebSocket gateway for real-time message broadcasting, built with Socket.io. Includes a static Vue demo page for testing live client ↔ server messaging.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> **Portfolio:** [ibrahimqumseya.github.io](https://ibrahimqumseya.github.io) · Related React task UI: [task-managment-front-end](https://github.com/IbrahimQumseya/task-managment-front-end)
 
-## Description
+## Problem Solved
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Demonstrates how to build a **real-time server** in NestJS: connection lifecycle hooks, subscribed message handlers, and broadcast to all connected clients — a pattern used in live dashboards, chat, and collaborative task boards.
 
-## Installation
+## Core Features
 
-```bash
-$ npm install
+| Feature | Description |
+| --- | --- |
+| **WebSocket gateway** | NestJS `@WebSocketGateway` on port `3101` |
+| **Socket.io** | Path `/websocket`, CORS enabled |
+| **Connection lifecycle** | Logs connect / disconnect events |
+| **Broadcast messaging** | `msgToServer` → broadcast `msgToClient` to all clients |
+| **Static demo client** | Vue 1 page in `static/index.html` for manual testing |
+
+## Stack
+
+| Layer | Technology |
+| --- | --- |
+| **Framework** | NestJS 8 |
+| **Real-time** | Socket.io 4, `@nestjs/websockets` |
+| **Language** | TypeScript |
+| **Demo UI** | Vue 1 (static HTML in `static/`) |
+
+## Architecture
+
+```
+Client (browser)          NestJS Gateway              All clients
+      │                         │                         │
+      │── msgToServer ─────────▶│                         │
+      │                         │── msgToClient (broadcast)▶│
 ```
 
-## Running the app
+Gateway implementation: `src/app.gateway.ts`
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 16+
+- npm
+
+### Install & run
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone https://github.com/IbrahimQumseya/task-management-web-socket.git
+cd task-management-web-socket
+npm install
+npm run start:dev
 ```
 
-## Test
+Server listens on **http://localhost:3101** (WebSocket path: `/websocket`).
 
-```bash
-# unit tests
-$ npm run test
+### Try the demo
 
-# e2e tests
-$ npm run test:e2e
+1. Start the server (`npm run start:dev`)
+2. Open `static/index.html` in a browser (or serve the `static/` folder)
+3. Open a second browser tab/window to the same page
+4. Send a message — it appears in **both** tabs via broadcast
 
-# test coverage
-$ npm run test:cov
-```
+### Scripts
 
-## Support
+| Script | Description |
+| --- | --- |
+| `npm run start:dev` | Development with watch |
+| `npm run build` | Production build |
+| `npm run test` | Unit tests |
+| `npm run test:e2e` | E2E tests |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## WebSocket Events
 
-## Stay in touch
+| Event | Direction | Description |
+| --- | --- | --- |
+| `msgToServer` | Client → Server | Send text payload |
+| `msgToClient` | Server → All clients | Broadcast received message |
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Related Project
+
+**[task-managment-front-end](https://github.com/IbrahimQumseya/task-managment-front-end)** — React task management UI (Redux Toolkit, Material UI, auth). Separate REST-based app from the same learning period; not wired to this WebSocket server.
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+UNLICENSED — portfolio / learning project.
